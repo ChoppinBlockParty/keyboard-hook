@@ -1,0 +1,14 @@
+*
+!Reader/
+!Writer/
+!source/
+!.gitignore
+!CMakeLists.txt
+!Makefile
+!README.md
+!*.h
+!*.c
+!*.hpp
+!*.cpp
+*.*.*
+*.*.*.*
