@@ -14,6 +14,10 @@
 #include <thread>
 #include <vector>
 
+#include "EventHandler.hpp"
+
+EventQueue _eventQueue;
+
 class SimpleKey {
 public:
   SimpleKey(unsigned int keyCode) : _keyCode(keyCode) {}
@@ -372,15 +376,8 @@ sendDeviceInfo() {
   return 0;
 }
 
-int  tempCounter           = 0;
-bool _isInputDeviceGrabbed = false;
-
 int
-sendEvent(struct input_event* event) {
-  if (!_isInputDeviceGrabbed) {
-    return 0;
-  }
-
+writeEvent(struct input_event* event) {
   int result =  write(outpuDeviceFileDescriptor2,
                       (void*)event,
                       sizeof (struct input_event));
@@ -397,13 +394,36 @@ sendEvent(struct input_event* event) {
     return result;
   }
 
-  // tempCounter++;
+  return 0;
+}
 
-  if (tempCounter > 30) {
-    return -1;
+bool _isInputDeviceGrabbed = false;
+
+int
+sendEvent(struct input_event* event) {
+  if (!_isInputDeviceGrabbed) {
+    return 0;
   }
 
-  return 0;
+  handleEvent(event);
+
+  int result = 0;
+
+  if (_eventQueue.size() != 0) {
+    for (auto& queueEvent : _eventQueue) {
+      result = writeEvent(&queueEvent);
+
+      if (result != 0) {
+        break;
+      }
+    }
+  } else {
+    result = writeEvent(event);
+  }
+
+  _eventQueue.clear();
+
+  return result;
 }
 
 void
@@ -454,10 +474,41 @@ viewDevices() {
 }
 
 void
+viewEventsPure() {
+  struct libevdev* dev = NULL;
+  int              fd;
+  fd = open("/dev/input/event0", O_RDONLY);
+
+  if (fd <= 0) {
+    logError("Failed to open a device file descriptor");
+  }
+
+  unsigned int const size = sizeof (struct input_event);
+
+  void* buffer = new unsigned char[size];
+
+  while (true) {
+    ssize_t resultSize = read(fd, buffer, size);
+
+    if (resultSize == 0) {
+      continue;
+    }
+    struct input_event* event = (struct input_event*)buffer;
+
+    if (event->code == 0 &&
+        event->type == 0 &&
+        event->value == 0) {
+      // continue;
+    }
+    print_event(event);
+  }
+}
+
+void
 viewEvents() {
   struct libevdev* dev = NULL;
   int              fd;
-  fd = open("/dev/input/event0", O_RDONLY | O_NONBLOCK);
+  fd = open("/dev/input/event7", O_RDONLY | O_NONBLOCK);
 
   int err;
   dev = libevdev_new();
@@ -534,7 +585,6 @@ grabInputDevice() {
 
     return err;
   }
-    logError("Device grabbed");
 
   _isInputDeviceGrabbed = true;
 
@@ -544,7 +594,7 @@ grabInputDevice() {
 int
 sendSafeEvent(struct input_event* event, int const& result) {
   if (result == -EAGAIN) {
-    return 0;
+    //return 0;
   }
 
   return sendEvent(event);
@@ -633,7 +683,7 @@ runThread() {
 
 void
 setupHook() {
-  std::thread thread(viewEvents);
+  std::thread thread(runThread);
 
   thread.join();
 }

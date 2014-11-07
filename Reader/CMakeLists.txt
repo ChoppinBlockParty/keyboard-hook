@@ -9,7 +9,7 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(SEND_ERROR "In-source builds are not allowed.")
 endif ()
 # ------------------------------------------------------------------------------
-project("X11Hook" C CXX)
+project("LinuxKeyboardHookReader" C CXX)
 # ------------------------------------------------------------------------------
 set(CMAKE_ERROR_DEPRECATED ON)
 # ------------------------------------------------------------------------------
@@ -39,10 +39,10 @@ endif ()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if (COMPILER_IS_G++)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmessage-length=0")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -54,11 +54,11 @@ file(GLOB_RECURSE CPP_FILES
   "${PROJECT_DIR}/source/*.cpp")
 
 
-add_executable(LinuxHookTest ${CPP_FILES})
+add_executable(LinuxKeyboardHookReader ${CPP_FILES})
 
-target_link_libraries(LinuxHookTest evdev pthread)
+target_link_libraries(LinuxKeyboardHookReader evdev pthread)
 
-install(TARGETS LinuxHookTest
+install(TARGETS LinuxKeyboardHookReader
         ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
         RUNTIME DESTINATION ${INSTALL_BINARY_DIR})

@@ -75,6 +75,8 @@ _releaseDeviceInfoBuffer(struct inode* inode, struct file* filp) {
   int err = createOutputKeyboard(_deviceInfoBuffer->major,
                                  _deviceInfoBuffer->minor,
                                  _deviceInfoBuffer->class);
+  _deviceInfoBuffer->bufferPosition = 0;
+
   if (err != 0) {
     printk(KERN_WARNING "Failed to createOutputKeyboard");
     return err;

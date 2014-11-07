@@ -2,6 +2,8 @@
 
 #include <linux/input.h>
 
+#include "OutputKeyboard.h"
+
 #define DEVICE_INFO_BUFFER_NAME "mymodule1"
 
 struct InputKeyboard* _keyboard;
@@ -80,9 +82,10 @@ out:
 int
 _releaseInputKeyboard(struct inode* inode, struct file* filp) {
   mutex_lock(&_keyboard->mutex);
-  _keyboard->bufferPosition = 0;
+  _keyboard->bufferPosition     = 0;
   _keyboard->bufferReadPosition = 0;
   mutex_unlock(&_keyboard->mutex);
+  releaseOutputKeyboard();
   return 0;
 }
 

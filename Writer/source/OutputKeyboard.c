@@ -31,7 +31,7 @@ _runLoop(void* data) {
       break;
     }
 
-    //mutex_lock(&inputKeyboard->mutex);
+    // mutex_lock(&inputKeyboard->mutex);
     // if (mutex_lock_killable(&inputKeyboard->mutex)) {
     //  return -EINTR;
     // }
@@ -46,23 +46,23 @@ _runLoop(void* data) {
 
       event = *((struct input_event*)
                 &inputKeyboard->data[inputKeyboard->bufferReadPosition]);
-      //mutex_unlock(&inputKeyboard->mutex);
+      // mutex_unlock(&inputKeyboard->mutex);
       inputKeyboard->bufferReadPosition += size;
 
-      handleEvents(&event);
+      // handleEvents(&event);
 
       input_event(_keyboard,
                   event.type,
                   event.code,
                   event.value);
 
-     // mutex_lock(&inputKeyboard->mutex);
+      // mutex_lock(&inputKeyboard->mutex);
       // if (mutex_lock_killable(&inputKeyboard->mutex)) {
       //  return -EINTR;
       // }
     }
 
-    //mutex_unlock(&inputKeyboard->mutex);
+    // mutex_unlock(&inputKeyboard->mutex);
     // msleep(10);
     // Let CPU run other threads, and re scheduled within a specified period of
     // time
@@ -163,7 +163,6 @@ parseDeviceInfo(void) {
   parseInfo(infoBuffer, &index);
 
   size = getUnsignedIntFromData(infoBuffer->data, &index);
-  printk(KERN_WARNING "sdfsdf %d \n", size);
 
   startIndex = index;
 
@@ -226,6 +225,7 @@ releaseOutputKeyboard(void) {
 
   if (_keyboard) {
     input_unregister_device(_keyboard);
+    _keyboard = 0;
   }
 
   releaseInputKeyboard();
