@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=LinuxKeyboardHookReader
+Type=Application
+Exec=LinuxKeyboardHookReader
+Terminal=true

@@ -12,3 +12,8 @@
 !*.cpp
 *.*.*
 *.*.*.*
+
+!tools
+!autostart
+!tools/autostart/Memo.md
+!tools/autostart/LinuxKeyboardHookReader.desktop
