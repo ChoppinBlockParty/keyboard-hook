@@ -20,7 +20,7 @@
 MODULE_AUTHOR("Viacheslav Mikerov");
 MODULE_LICENSE("GPL");
 
-#define CFAKE_DEVICE_NAME "mymodule"
+#define LINUX_KEYBOARD_HOOK_WRITER_MODULE_NAME "LinuxKeyboardHookWriter"
 
 static int const _deviceCount = 2;
 
@@ -50,7 +50,10 @@ cfake_init_module(void) {
   }
 
   /* Get a range of minor numbers (starting with 0) to work with */
-  err = alloc_chrdev_region(&dev, 0, _deviceCount, CFAKE_DEVICE_NAME);
+  err = alloc_chrdev_region(&dev,
+                            0,
+                            _deviceCount,
+                            LINUX_KEYBOARD_HOOK_WRITER_MODULE_NAME);
 
   if (err < 0) {
     printk(KERN_WARNING "[target] alloc_chrdev_region() failed\n");
@@ -60,7 +63,7 @@ cfake_init_module(void) {
   _major = MAJOR(dev);
 
   /* Create device class (before allocation of the array of devices) */
-  _class = class_create(THIS_MODULE, CFAKE_DEVICE_NAME);
+  _class = class_create(THIS_MODULE, LINUX_KEYBOARD_HOOK_WRITER_MODULE_NAME);
 
   if (IS_ERR(_class)) {
     err = PTR_ERR(_class);

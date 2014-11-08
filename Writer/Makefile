@@ -1,5 +1,5 @@
-obj-m := mymodule.o
-mymodule-objs := source/mymodule.o source/OutputKeyboard.o source/DeviceInfoBuffer.o source/InputKeyboard.o source/handleEvents.o
+obj-m := LinuxKeyboardHookWriter.o
+LinuxKeyboardHookWriter-objs := source/LinuxKeyboardHookWriter.o source/OutputKeyboard.o source/DeviceInfoBuffer.o source/InputKeyboard.o
 
 ccflags-y := -O2 -I$(src)/source
 

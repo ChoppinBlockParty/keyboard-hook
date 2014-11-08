@@ -16,6 +16,12 @@
 
 #include "EventHandler.hpp"
 
+#define LINUX_KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_PATH \
+  "/dev/LinuxKeyboardHookWriterDeviceInfoBuffer"
+
+#define LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_PATH \
+  "/dev/LinuxKeyboardHookWriterInputKeyboard"
+
 EventQueue _eventQueue;
 
 class SimpleKey {
@@ -274,7 +280,6 @@ gatherEvents(struct libevdev* dev) {
     size += buffer->size();
   }
     writeToBuffer(&deviceInfo, size);
-  logInfo("sdfsdf %d", size);
 
   for (auto& buffer : buffers) {
     writeToBuffer(&deviceInfo, buffer);
@@ -327,10 +332,14 @@ print_sync_event(struct input_event* event) {
   return 0;
 }
 
-const char* outputDeviceName1          = "/dev/mymodule0";
-const char* outputDeviceName2          = "/dev/mymodule1";
-int         outpuDeviceFileDescriptor1 = -1;
-int         outpuDeviceFileDescriptor2 = -1;
+const char* outputDeviceName1 =
+  LINUX_KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_PATH;
+
+const char* outputDeviceName2 =
+  LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_PATH;
+
+int outpuDeviceFileDescriptor1 = -1;
+int outpuDeviceFileDescriptor2 = -1;
 
 bool
 openOutputDevice() {
@@ -410,7 +419,10 @@ sendEvent(struct input_event* event) {
   int result = 0;
 
   if (_eventQueue.size() != 0) {
+    int i = 0;
+
     for (auto& queueEvent : _eventQueue) {
+      i++;
       result = writeEvent(&queueEvent);
 
       if (result != 0) {
@@ -475,8 +487,7 @@ viewDevices() {
 
 void
 viewEventsPure() {
-  struct libevdev* dev = NULL;
-  int              fd;
+  int fd;
   fd = open("/dev/input/event0", O_RDONLY);
 
   if (fd <= 0) {
@@ -594,7 +605,7 @@ grabInputDevice() {
 int
 sendSafeEvent(struct input_event* event, int const& result) {
   if (result == -EAGAIN) {
-    //return 0;
+    // return 0;
   }
 
   return sendEvent(event);
@@ -613,8 +624,8 @@ initializeAndRunForwarding() {
     return;
   }
 
-  viewDevices();
-  std::thread thread2(viewEvents);
+  // viewDevices();
+  //std::thread thread2(viewEvents);
 
   int rc = 0;
 
@@ -646,13 +657,18 @@ initializeAndRunForwarding() {
         return;
       }
     }
+
+    if (rc == -EAGAIN) {
+      usleep(1000);
+      continue;
+    }
   } while (rc == LIBEVDEV_READ_STATUS_SYNC || rc ==
            LIBEVDEV_READ_STATUS_SUCCESS || rc == -EAGAIN);
 
   if (rc != LIBEVDEV_READ_STATUS_SUCCESS && rc != -EAGAIN) {
     fprintf(stderr, "Failed to handle events: %s\n", strerror(-rc));
   }
-  thread2.join();
+  // thread2.join();
 }
 
 void
@@ -683,6 +699,9 @@ runThread() {
 
 void
 setupHook() {
+  // For some reason it is required otherwise you will get empty (0) events at
+  // the first run
+  _eventQueue.reserve(9);
   std::thread thread(runThread);
 
   thread.join();

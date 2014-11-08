@@ -1,5 +1,7 @@
 #include "EventHandler.hpp"
 
+#include <cstdio>
+
 typedef unsigned int KeyCode;
 
 struct input_event*
@@ -139,6 +141,8 @@ static LinuxKeyboardHook::Reader::Modifier _altSemicolon(39);
 static LinuxKeyboardHook::Reader::Modifier _semicolon(39);
 static LinuxKeyboardHook::Reader::Modifier _fakeBackspace(14);
 
+static LinuxKeyboardHook::Reader::Modifier _escape(1);
+static LinuxKeyboardHook::Reader::Modifier _capslock(58);
 static LinuxKeyboardHook::Reader::Modifier _germanShift(86);
 static LinuxKeyboardHook::Reader::Modifier _leftShift(42);
 static LinuxKeyboardHook::Reader::Modifier _rightShift(54);
@@ -156,6 +160,24 @@ bool
 isAltPressed() {
   return _leftAlt.isPressed() ||
          _rightAlt.isPressed();
+}
+
+bool
+handleCapsLock(struct input_event* event) {
+  if (event->type == EV_KEY &&
+      event->code == _capslock.code()) {
+    event->code = _escape.code();
+
+    if (event->value == 1) {
+      _capslock.isPressed() = true;
+    } else if (event->value == 0) {
+      _capslock.isPressed() = false;
+    }
+
+    return true;
+  }
+
+  return false;
 }
 
 bool
@@ -297,12 +319,6 @@ handleSemicolon(struct input_event* event) {
     }
     //
   } else if (isAltPressed()) {
-    if (event->value == 1) {
-      _altSemicolon.isPressed() = true;
-    } else if (event->value == 0) {
-      _altSemicolon.isPressed() = false;
-    }
-
     _leftAlt.saveState();
     _leftAlt.release(&event->time);
     _rightAlt.saveState();
@@ -314,6 +330,12 @@ handleSemicolon(struct input_event* event) {
 
     _leftAlt.restoreState(&event->time);
     _rightAlt.restoreState(&event->time);
+
+    if (event->value == 1) {
+      _altSemicolon.isPressed() = true;
+    } else if (event->value == 0) {
+      _altSemicolon.isPressed() = false;
+    }
   } else {
     event->code = _fakeBackspace.code();
 
@@ -329,7 +351,9 @@ handleSemicolon(struct input_event* event) {
 
 void
 handleEvent(struct input_event* event) {
-  if (handleGermanShift(event)) {
+  if (handleCapsLock(event)) {
+    //
+  } else if (handleGermanShift(event)) {
     //
   } else if (handleShift(event)) {
     //

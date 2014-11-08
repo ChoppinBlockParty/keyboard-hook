@@ -2,7 +2,8 @@
 
 #include "OutputKeyboard.h"
 
-#define DEVICE_INFO_BUFFER_NAME "mymodule0"
+#define LINUX_KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_NAME \
+  "LinuxKeyboardHookWriterDeviceInfoBuffer"
 
 struct DeviceInfoBuffer* _deviceInfoBuffer;
 
@@ -129,20 +130,26 @@ createDeviceInfoBuffer(unsigned int  major,
 
   if (errror) {
     printk(KERN_WARNING "[target] Error %d while trying to add %s (minor %d)",
-           errror, DEVICE_INFO_BUFFER_NAME, minor);
+           errror,
+           LINUX_KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_NAME,
+           minor);
     return errror;
   }
 
-  device = device_create(class, NULL,       /* no parent device */
-                         devno, NULL, /* no additional data */
-                         DEVICE_INFO_BUFFER_NAME);
+  device = device_create(class,
+                         NULL,
+                         /* no parent device */
+                         devno,
+                         NULL,
+                         /* no additional data */
+                         LINUX_KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_NAME);
 
   if (IS_ERR(device)) {
     errror = PTR_ERR(device);
     printk(
       KERN_WARNING "[target] Error %d while trying to create %s (minor %d)",
       errror,
-      DEVICE_INFO_BUFFER_NAME,
+      LINUX_KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_NAME,
       minor);
     cdev_del(&_deviceInfoBuffer->cdev);
     return errror;

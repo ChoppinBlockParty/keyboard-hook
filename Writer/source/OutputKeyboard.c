@@ -13,7 +13,6 @@
 
 #include "DeviceInfoBuffer.h"
 #include "InputKeyboard.h"
-#include "handleEvents.h"
 
 static struct input_dev* _keyboard = 0;
 
@@ -49,8 +48,6 @@ _runLoop(void* data) {
       // mutex_unlock(&inputKeyboard->mutex);
       inputKeyboard->bufferReadPosition += size;
 
-      // handleEvents(&event);
-
       input_event(_keyboard,
                   event.type,
                   event.code,
@@ -75,7 +72,7 @@ _runLoop(void* data) {
 int
 startEventLoop(void) {
   int         err;
-  const char* threadName = "Loop Thread";
+  const char* threadName = "LinuxKeyboardHookWriter Loop Thread";
   _loopThread = kthread_create(_runLoop, NULL, threadName);
 
   if (IS_ERR(_loopThread)) {
