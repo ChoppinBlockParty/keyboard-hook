@@ -23,6 +23,7 @@
   "/dev/LinuxKeyboardHookWriterInputKeyboard"
 
 EventQueue _eventQueue;
+bool       _isEventHandled;
 
 class SimpleKey {
 public:
@@ -418,7 +419,7 @@ sendEvent(struct input_event* event) {
 
   int result = 0;
 
-  if (_eventQueue.size() != 0) {
+  if (_isEventHandled) {
     int i = 0;
 
     for (auto& queueEvent : _eventQueue) {
@@ -429,11 +430,12 @@ sendEvent(struct input_event* event) {
         break;
       }
     }
+
+    _eventQueue.clear();
+    _isEventHandled = false;
   } else {
     result = writeEvent(event);
   }
-
-  _eventQueue.clear();
 
   return result;
 }
@@ -625,7 +627,7 @@ initializeAndRunForwarding() {
   }
 
   // viewDevices();
-  //std::thread thread2(viewEvents);
+  // std::thread thread2(viewEvents);
 
   int rc = 0;
 
@@ -702,6 +704,7 @@ setupHook() {
   // For some reason it is required otherwise you will get empty (0) events at
   // the first run
   _eventQueue.reserve(9);
+  _isEventHandled = false;
   std::thread thread(runThread);
 
   thread.join();

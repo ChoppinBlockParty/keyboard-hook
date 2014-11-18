@@ -7,6 +7,7 @@ typedef unsigned int KeyCode;
 struct input_event*
 createEvent() {
   _eventQueue.emplace_back();
+  _isEventHandled = true;
 
   return &_eventQueue.back();
 }
@@ -138,6 +139,9 @@ private:
 }
 
 static LinuxKeyboardHook::Reader::Modifier _altSemicolon(39);
+static LinuxKeyboardHook::Reader::Modifier _semicolonLeftAlt(56);
+static LinuxKeyboardHook::Reader::Modifier _semicolonRightAlt(100);
+static LinuxKeyboardHook::Reader::Modifier _semicolonLeftCtrl(29);
 static LinuxKeyboardHook::Reader::Modifier _semicolon(39);
 static LinuxKeyboardHook::Reader::Modifier _fakeBackspace(14);
 
@@ -148,6 +152,8 @@ static LinuxKeyboardHook::Reader::Modifier _leftShift(42);
 static LinuxKeyboardHook::Reader::Modifier _rightShift(54);
 static LinuxKeyboardHook::Reader::Modifier _leftAlt(56);
 static LinuxKeyboardHook::Reader::Modifier _rightAlt(100);
+static LinuxKeyboardHook::Reader::Modifier _leftCtrl(29);
+static LinuxKeyboardHook::Reader::Modifier _rightCtrl(97);
 
 bool
 isShiftPressed() {
@@ -211,6 +217,10 @@ handleAlt(struct input_event* event) {
       _leftAlt.isPressed() = false;
     }
 
+    if (_altSemicolon.isPressed()) {
+      _isEventHandled = true;
+    }
+
     return true;
   } else if (event->code == _rightAlt.code()) {
     if (event->value == 1) {
@@ -219,11 +229,43 @@ handleAlt(struct input_event* event) {
       _rightAlt.isPressed() = false;
     }
 
+    if (_altSemicolon.isPressed()) {
+      _isEventHandled = true;
+    }
+
     return true;
   }
 
   return false;
 }
+
+bool
+handleCtrl(struct input_event* event) {
+  if (event->type != EV_KEY) {
+    return false;
+  }
+
+  if (event->code == _leftCtrl.code()) {
+    if (event->value == 1) {
+      _leftCtrl.isPressed() = true;
+    } else if (event->value == 0) {
+      _leftCtrl.isPressed() = false;
+    }
+
+    return true;
+  } else if (event->code == _rightCtrl.code()) {
+    if (event->value == 1) {
+      _rightCtrl.isPressed() = true;
+    } else if (event->value == 0) {
+      _rightCtrl.isPressed() = false;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
 
 bool
 handleShift(struct input_event* event) {
@@ -279,22 +321,22 @@ handleSemicolon(struct input_event* event) {
   }
 
   if (_altSemicolon.isPressed()) {
-    _leftAlt.saveState();
-    _leftAlt.release(&event->time);
-    _rightAlt.saveState();
-    _rightAlt.release(&event->time);
-
       sendKeyEvent(&event->time,
                  event->value,
                  event->code);
-
-    _leftAlt.restoreState(&event->time);
-    _rightAlt.restoreState(&event->time);
 
     if (event->value == 1) {
       _altSemicolon.isPressed() = true;
     } else if (event->value == 0) {
       _altSemicolon.isPressed() = false;
+
+      //if (_leftAlt.isPressed()) {
+      //  _semicolonLeftAlt.restoreState(&event->time);
+      //}
+
+      //if (_rightAlt.isPressed()) {
+      //  _semicolonRightAlt.restoreState(&event->time);
+      //}
     }
 
     return true;
@@ -319,17 +361,27 @@ handleSemicolon(struct input_event* event) {
     }
     //
   } else if (isAltPressed()) {
-    _leftAlt.saveState();
-    _leftAlt.release(&event->time);
-    _rightAlt.saveState();
-    _rightAlt.release(&event->time);
+    _semicolonLeftCtrl.isPressed() = _leftCtrl.isPressed();
+    _semicolonLeftCtrl.saveState();
+    _semicolonLeftCtrl.isPressed() = false;
+    _semicolonLeftCtrl.press(&event->time);
+
+    _semicolonLeftAlt.isPressed()  = _leftAlt.isPressed();
+    _semicolonRightAlt.isPressed() = _rightAlt.isPressed();
+    _semicolonLeftAlt.saveState();
+    _semicolonLeftAlt.release(&event->time);
+    _semicolonRightAlt.saveState();
+    _semicolonRightAlt.release(&event->time);
+
+    _semicolonLeftCtrl.release(&event->time);
+    _semicolonLeftCtrl.restoreState(&event->time);
 
       sendKeyEvent(&event->time,
                  event->value,
                  event->code);
 
-    _leftAlt.restoreState(&event->time);
-    _rightAlt.restoreState(&event->time);
+    // _leftAlt.restoreState(&event->time);
+    // _rightAlt.restoreState(&event->time);
 
     if (event->value == 1) {
       _altSemicolon.isPressed() = true;
@@ -358,6 +410,8 @@ handleEvent(struct input_event* event) {
   } else if (handleShift(event)) {
     //
   } else if (handleAlt(event)) {
+    //
+  } else if (handleCtrl(event)) {
     //
   } else if (handleSemicolon(event)) {
     //
