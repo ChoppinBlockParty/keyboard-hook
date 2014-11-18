@@ -17,3 +17,4 @@
 !autostart
 !tools/autostart/Memo.md
 !tools/autostart/LinuxKeyboardHookReader.desktop
+!tools/autostart/LinuxKeyboardHookWriter.conf
