@@ -16,6 +16,9 @@
 
 #include "EventHandler.hpp"
 
+#define LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER \
+  "/dev/input/event4"
+
 #define LINUX_KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_PATH \
   "/dev/LinuxKeyboardHookWriterDeviceInfoBuffer"
 
@@ -490,7 +493,8 @@ viewDevices() {
 void
 viewEventsPure() {
   int fd;
-  fd = open("/dev/input/event0", O_RDONLY);
+  fd = open(LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER,
+      O_RDONLY);
 
   if (fd <= 0) {
     logError("Failed to open a device file descriptor");
@@ -521,7 +525,8 @@ void
 viewEvents() {
   struct libevdev* dev = NULL;
   int              fd;
-  fd = open("/dev/input/event7", O_RDONLY | O_NONBLOCK);
+  fd = open(LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER,
+      O_RDONLY | O_NONBLOCK);
 
   int err;
   dev = libevdev_new();
@@ -676,7 +681,8 @@ initializeAndRunForwarding() {
 void
 runThread() {
   int fd;
-  fd = open("/dev/input/event0", O_RDONLY | O_NONBLOCK);
+  fd = open(LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER,
+      O_RDONLY | O_NONBLOCK);
 
   int err;
   InputDevice = libevdev_new();
@@ -706,6 +712,8 @@ setupHook() {
   _eventQueue.reserve(9);
   _isEventHandled = false;
   std::thread thread(runThread);
+  // std::thread thread(viewDevices)
+  // std::thread thread(viewEvents);
 
   thread.join();
 }
