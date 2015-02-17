@@ -2,6 +2,6 @@
 #define LinuxKeyboardHook_Reader_hook_hpp
 
 void
-setupHook();
+setupHook(int const&, bool);
 
 #endif

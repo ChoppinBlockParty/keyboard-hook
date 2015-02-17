@@ -34,6 +34,13 @@ endif ()
 # ==============================================================================
 # }}} Compilers
 
+find_package(
+  Boost 1.55
+  COMPONENTS
+  program_options
+  system
+  REQUIRED)
+
 # Flags {{{
 # ==============================================================================
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -53,10 +60,19 @@ endif ()
 file(GLOB_RECURSE CPP_FILES
   "${PROJECT_DIR}/source/*.cpp")
 
-
 add_executable(LinuxKeyboardHookReader ${CPP_FILES})
 
-target_link_libraries(LinuxKeyboardHookReader evdev pthread)
+target_include_directories(
+  LinuxKeyboardHookReader
+  SYSTEM PRIVATE
+  ${Boost_INCLUDE_DIRS})
+
+
+target_link_libraries(
+  LinuxKeyboardHookReader
+  ${Boost_LIBRARIES}
+  evdev
+  pthread)
 
 install(TARGETS LinuxKeyboardHookReader
         ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}

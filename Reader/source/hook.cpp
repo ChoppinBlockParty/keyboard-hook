@@ -17,7 +17,7 @@
 #include "EventHandler.hpp"
 
 #define LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER \
-  "/dev/input/event4"
+  "/dev/input/event"
 
 #define LINUX_KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_PATH \
   "/dev/LinuxKeyboardHookWriterDeviceInfoBuffer"
@@ -103,6 +103,7 @@ writeToBuffer(Buffer* buffer, std::string const* value) {
   for (unsigned int i = 0; i < value->size(); ++i) {
     buffer->push_back(value->at(i));
   }
+
   buffer->push_back('\0');
 }
 
@@ -123,12 +124,12 @@ print_abs_bits(struct libevdev* dev, int axis) {
 
   abs = libevdev_get_abs_info(dev, axis);
 
-    printf("	Value	%6d\n", abs->value);
-    printf("	Min	%6d\n",   abs->minimum);
-    printf("	Max	%6d\n",   abs->maximum);
+  printf("	Value	%6d\n", abs->value);
+  printf("	Min	%6d\n",   abs->minimum);
+  printf("	Max	%6d\n",   abs->maximum);
 
   if (abs->fuzz) {
-    printf("	Fuzz	%6d\n",  abs->fuzz);
+    printf("	Fuzz	%6d\n", abs->fuzz);
   }
 
   if (abs->flat) {
@@ -161,7 +162,7 @@ print_code_bits(struct libevdev* dev, unsigned int type, unsigned int max) {
 static void
 print_bits(struct libevdev* dev) {
   unsigned int i;
-      printf("Supported events:\n");
+  printf("Supported events:\n");
 
   for (i = 0; i <= EV_MAX; i++) {
     if (libevdev_has_event_type(dev, i)) {
@@ -228,14 +229,14 @@ gatherInfo(struct libevdev* dev) {
 
   const int deviceIdVersion = libevdev_get_id_version(dev);
 
-    writeToBuffer(&deviceInfo, (unsigned int)deviceName.size() + 1);
-    writeToBuffer(&deviceInfo, &deviceName);
-    writeToBuffer(&deviceInfo, (unsigned int)devicePhys.size() + 1);
-    writeToBuffer(&deviceInfo, &devicePhys);
-    writeToBuffer(&deviceInfo, deviceIdBusType);
-    writeToBuffer(&deviceInfo, deviceIdVendor);
-    writeToBuffer(&deviceInfo, deviceIdProduct);
-    writeToBuffer(&deviceInfo, deviceIdVersion);
+  writeToBuffer(&deviceInfo, (unsigned int)deviceName.size() + 1);
+  writeToBuffer(&deviceInfo, &deviceName);
+  writeToBuffer(&deviceInfo, (unsigned int)devicePhys.size() + 1);
+  writeToBuffer(&deviceInfo, &devicePhys);
+  writeToBuffer(&deviceInfo, deviceIdBusType);
+  writeToBuffer(&deviceInfo, deviceIdVendor);
+  writeToBuffer(&deviceInfo, deviceIdProduct);
+  writeToBuffer(&deviceInfo, deviceIdVersion);
 }
 
 void
@@ -283,7 +284,8 @@ gatherEvents(struct libevdev* dev) {
   for (auto& buffer : buffers) {
     size += buffer->size();
   }
-    writeToBuffer(&deviceInfo, size);
+
+  writeToBuffer(&deviceInfo, size);
 
   for (auto& buffer : buffers) {
     writeToBuffer(&deviceInfo, buffer);
@@ -297,7 +299,7 @@ gatherEvents(struct libevdev* dev) {
 static void
 print_props(struct libevdev* dev) {
   unsigned int i;
-      printf("Properties:\n");
+  printf("Properties:\n");
 
   for (i = 0; i <= INPUT_PROP_MAX; i++) {
     if (libevdev_has_property(dev, i)) {
@@ -491,10 +493,10 @@ viewDevices() {
 }
 
 void
-viewEventsPure() {
+viewEventsPure(std::string const& devicePath) {
   int fd;
-  fd = open(LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER,
-      O_RDONLY);
+  fd = open(devicePath.c_str(),
+            O_RDONLY);
 
   if (fd <= 0) {
     logError("Failed to open a device file descriptor");
@@ -510,6 +512,7 @@ viewEventsPure() {
     if (resultSize == 0) {
       continue;
     }
+
     struct input_event* event = (struct input_event*)buffer;
 
     if (event->code == 0 &&
@@ -517,16 +520,17 @@ viewEventsPure() {
         event->value == 0) {
       // continue;
     }
+
     print_event(event);
   }
 }
 
 void
-viewEvents() {
+viewEvents(std::string const& devicePath) {
   struct libevdev* dev = NULL;
   int              fd;
-  fd = open(LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER,
-      O_RDONLY | O_NONBLOCK);
+  fd = open(devicePath.c_str(),
+            O_RDONLY | O_NONBLOCK);
 
   int err;
   dev = libevdev_new();
@@ -563,6 +567,7 @@ viewEvents() {
         print_sync_event(&event);
         rc = libevdev_next_event(dev, LIBEVDEV_READ_FLAG_SYNC, &event);
       }
+
       printf("::::::::::::::::::::: re-synced ::::::::::::::::::::::\n");
     } else if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
       print_event(&event);
@@ -586,6 +591,7 @@ releaseDevices() {
   if (outpuDeviceFileDescriptor2 > 0) {
     close(outpuDeviceFileDescriptor2);
   }
+
   // libevdev_grab(InputDevice, LIBEVDEV_UNGRAB);
   libevdev_free(InputDevice);
 }
@@ -653,6 +659,7 @@ initializeAndRunForwarding() {
         if (sendSafeEvent(&event, rc) != 0) {
           return;
         }
+
         rc = libevdev_next_event(InputDevice, LIBEVDEV_READ_FLAG_SYNC, &event);
       }
 
@@ -675,14 +682,15 @@ initializeAndRunForwarding() {
   if (rc != LIBEVDEV_READ_STATUS_SUCCESS && rc != -EAGAIN) {
     fprintf(stderr, "Failed to handle events: %s\n", strerror(-rc));
   }
+
   // thread2.join();
 }
 
 void
-runThread() {
+handleEvents(std::string const& devicePath) {
   int fd;
-  fd = open(LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER,
-      O_RDONLY | O_NONBLOCK);
+  fd = open(devicePath.c_str(),
+            O_RDONLY | O_NONBLOCK);
 
   int err;
   InputDevice = libevdev_new();
@@ -706,14 +714,25 @@ runThread() {
 }
 
 void
-setupHook() {
+setupHook(int const& device, bool doShowEvent) {
   // For some reason it is required otherwise you will get empty (0) events at
   // the first run
   _eventQueue.reserve(9);
   _isEventHandled = false;
-  std::thread thread(runThread);
-  // std::thread thread(viewDevices)
-  // std::thread thread(viewEvents);
 
-  thread.join();
+  if (device < 0) {
+    viewDevices();
+  } else {
+    std::string devicePath
+                = LINUX_KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER;
+    devicePath += std::to_string(device);
+
+    if (doShowEvent) {
+      viewEvents(devicePath);
+    } else {
+      handleEvents(devicePath);
+    }
+  }
+
+  // std::thread thread(viewEvents);
 }

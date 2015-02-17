@@ -3,7 +3,7 @@ LinuxKeyboardHookWriter-objs := source/LinuxKeyboardHookWriter.o source/OutputKe
 
 ccflags-y := -O2 -I$(src)/source
 
-all:
+modules:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
 clean:
