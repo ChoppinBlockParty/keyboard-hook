@@ -22,7 +22,7 @@ MODULE_LICENSE("GPL");
 
 #define LINUX_KEYBOARD_HOOK_WRITER_MODULE_NAME "LinuxKeyboardHookWriter"
 
-static int const _deviceCount = 2;
+static int const _deviceCount = MAX_NUMBER_OF_DEVICES + 1;
 
 static unsigned int  _major = 0;
 static struct class* _class = NULL;

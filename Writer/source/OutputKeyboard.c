@@ -14,77 +14,24 @@
 #include "DeviceInfoBuffer.h"
 #include "InputKeyboard.h"
 
-static struct input_dev* _keyboard = 0;
+struct ListEntry {
+  struct list_head      list;
+  struct OutputKeyboard device;
+};
 
-static struct task_struct* _loopThread = 0;
+static LIST_HEAD(_list);
 
-int
-_runLoop(void* data) {
-  struct InputKeyboard* inputKeyboard = getInputKeyboard();
-  unsigned int          size          = sizeof(struct input_event);
+struct ListEntry*
+_findListEntry(unsigned int device_number) {
+  struct ListEntry* i;
 
-  while (true) {
-    set_current_state(TASK_UNINTERRUPTIBLE);
-
-    if (kthread_should_stop()) {
-      break;
+  list_for_each_entry(i, &_list, list) {
+    if (i->device.number == device_number) {
+      return i;
     }
-
-    // mutex_lock(&inputKeyboard->mutex);
-    // if (mutex_lock_killable(&inputKeyboard->mutex)) {
-    //  return -EINTR;
-    // }
-
-    while (inputKeyboard->bufferPosition != inputKeyboard->bufferReadPosition) {
-      unsigned int       finalSize = inputKeyboard->bufferReadPosition + size;
-      struct input_event event;
-
-      if (finalSize >= inputKeyboard->buffer_size) {
-        inputKeyboard->bufferReadPosition = 0;
-      }
-
-      event = *((struct input_event*)
-                &inputKeyboard->data[inputKeyboard->bufferReadPosition]);
-      // mutex_unlock(&inputKeyboard->mutex);
-      inputKeyboard->bufferReadPosition += size;
-
-      input_event(_keyboard,
-                  event.type,
-                  event.code,
-                  event.value);
-
-      // mutex_lock(&inputKeyboard->mutex);
-      // if (mutex_lock_killable(&inputKeyboard->mutex)) {
-      //  return -EINTR;
-      // }
-    }
-
-    // mutex_unlock(&inputKeyboard->mutex);
-    // msleep(10);
-    // Let CPU run other threads, and re scheduled within a specified period of
-    // time
-    schedule_timeout(HZ / 1000);
   }
 
-  return 0;
-}
-
-int
-startEventLoop(void) {
-  int         err;
-  const char* threadName = "LinuxKeyboardHookWriter Loop Thread";
-  _loopThread = kthread_create(_runLoop, NULL, threadName);
-
-  if (IS_ERR(_loopThread)) {
-    printk(KERN_ERR "Faile to create loop thread\n");
-    err         = PTR_ERR(_loopThread);
-    _loopThread = NULL;
-    return err;
-  }
-
-  wake_up_process(_loopThread);
-
-  return 0;
+  return NULL;
 }
 
 int
@@ -109,33 +56,38 @@ getUnsignedIntFromData(unsigned char* data, unsigned int* index) {
 
 void
 parseInfo(struct DeviceInfoBuffer* infoBuffer,
-          unsigned int*            index) {
+          unsigned int*            index,
+          struct ListEntry*        entry) {
   unsigned int size = getUnsignedIntFromData(
     infoBuffer->data, index);
-  _keyboard->name = &infoBuffer->data[*index];
-  *index         += size;
+  entry->device.number = size;
+  size                        = getUnsignedIntFromData(
+    infoBuffer->data, index);
+  entry->device.device->name = &infoBuffer->data[*index];
+  *index                    += size;
 
   size = getUnsignedIntFromData(
     infoBuffer->data, index);
-  _keyboard->phys = &infoBuffer->data[*index];
-  *index         += size;
+  entry->device.device->phys = &infoBuffer->data[*index];
+  *index                    += size;
 
-  _keyboard->id.bustype = getIntFromData(infoBuffer->data, index);
-  _keyboard->id.vendor  = getIntFromData(infoBuffer->data, index);
-  _keyboard->id.product = getIntFromData(infoBuffer->data, index);
-  _keyboard->id.version = getIntFromData(infoBuffer->data, index);
+  entry->device.device->id.bustype = getIntFromData(infoBuffer->data, index);
+  entry->device.device->id.vendor  = getIntFromData(infoBuffer->data, index);
+  entry->device.device->id.product = getIntFromData(infoBuffer->data, index);
+  entry->device.device->id.version = getIntFromData(infoBuffer->data, index);
 }
 
 void
 parseCodeBits(struct DeviceInfoBuffer* infoBuffer,
-              unsigned int*            index) {
+              unsigned int*            index,
+              struct ListEntry*        entry) {
   unsigned int type = getUnsignedIntFromData(
     infoBuffer->data, index);
   unsigned int size = getUnsignedIntFromData(
     infoBuffer->data, index);
   unsigned int startIndex = 0;
 
-  _keyboard->evbit[0] |= BIT_MASK(type);
+  entry->device.device->evbit[0] |= BIT_MASK(type);
 
   startIndex = *index;
 
@@ -143,87 +95,126 @@ parseCodeBits(struct DeviceInfoBuffer* infoBuffer,
     unsigned int code = getUnsignedIntFromData(infoBuffer->data, index);
 
     if (type == EV_KEY) {
-      _keyboard->keybit[BIT_WORD(code)] |= BIT_MASK(code);
+      entry->device.device->keybit[BIT_WORD(code)] |= BIT_MASK(code);
     } else if (type == EV_LED) {
-      _keyboard->ledbit[BIT_WORD(code)] |= BIT_MASK(code);
+      entry->device.device->ledbit[BIT_WORD(code)] |= BIT_MASK(code);
     }
   }
 }
 
 void
-parseDeviceInfo(void) {
+parseDeviceInfo(struct ListEntry* entry) {
   struct DeviceInfoBuffer* infoBuffer = getDeviceInfoBuffer();
   unsigned int             index      = 0;
   unsigned int             size       = 0;
   unsigned int             startIndex = 0;
 
-  parseInfo(infoBuffer, &index);
+  parseInfo(infoBuffer, &index, entry);
 
   size = getUnsignedIntFromData(infoBuffer->data, &index);
 
   startIndex = index;
 
   for (; (index - startIndex) < size;)
-    parseCodeBits(infoBuffer, &index);
+    parseCodeBits(infoBuffer, &index, entry);
 }
 
 int
 createOutputKeyboard(unsigned int  major,
                      unsigned int  minor,
                      struct class* class) {
-  int error = 0;
+  int               error      = 0;
+  struct ListEntry* find_entry = NULL;
+  struct ListEntry* entry      = NULL;
+  int               size       = 0;
 
-  if (_keyboard) {
-    return 0;
+  list_for_each_entry(find_entry, &_list, list) {
+    ++size;
   }
 
-  _keyboard = input_allocate_device();
+  if (size == MAX_NUMBER_OF_DEVICES) {
+    printk(KERN_ERR "OutputKeyboard.c: Too many devices allocated already\n");
+    return -EFAULT;
+  }
 
-  if (!_keyboard) {
+  find_entry = NULL;
+
+  entry = (struct ListEntry*)kzalloc(
+    sizeof(struct ListEntry),
+    GFP_KERNEL);
+
+  if (!entry) {
     printk(KERN_ERR "OutputKeyboard.c: Not enough memory\n");
     error = -ENOMEM;
     return error;
   }
 
-  parseDeviceInfo();
+  entry->device.device = input_allocate_device();
 
-  error = input_register_device(_keyboard);
+  if (!entry->device.device) {
+    printk(KERN_ERR "OutputKeyboard.c: Not enough memory\n");
+    kfree(entry);
+    error = -ENOMEM;
+    return error;
+  }
+
+  parseDeviceInfo(entry);
+  find_entry = _findListEntry(entry->device.number);
+
+  if (find_entry != 0) {
+    printk(KERN_ERR "OutputKeyboard.c: Device already exists\n");
+    input_free_device(entry->device.device);
+    kfree(entry);
+    return -EFAULT;
+  }
+
+  error = input_register_device(entry->device.device);
 
   if (error) {
     printk(KERN_ERR "OutputKeyboard.c: Failed to register device\n");
-    input_free_device(_keyboard);
+    input_free_device(entry->device.device);
+    kfree(entry);
     return error;
   }
 
-  error = createInputKeyboard(major, 1, class);
+  error = createInputKeyboard(major,
+                              minor + size,
+                              class,
+                              &entry->device);
 
   if (error != 0) {
     printk(KERN_ERR "OutputKeyboard.c: Failed to createInputKeyboard\n");
-    input_free_device(_keyboard);
+    input_unregister_device(entry->device.device);
+    input_free_device(entry->device.device);
+    kfree(entry);
     return error;
   }
 
-  startEventLoop();
+  list_add(&entry->list, &_list);
 
   return 0;
 }
 
 void
-releaseOutputKeyboard(void) {
-  int result;
+releaseAllOutputKeyboard(void) {
+  struct ListEntry* i;
+  list_for_each_entry(i, &_list, list) {
+    releaseOutputKeyboard(&i->device);
+  }
+  releaseAllInputKeyboard();
+}
 
-  if (_loopThread) {
-    result = kthread_stop(_loopThread);
+void
+releaseOutputKeyboard(struct OutputKeyboard* device) {
+  struct ListEntry* entry = _findListEntry(device->number);
 
-    if (!result) {
-      printk(KERN_ERR "Failed to stop the loop thread\n");
-    }
+  if (entry == 0) {
+    return;
   }
 
-  if (_keyboard) {
-    input_unregister_device(_keyboard);
-    _keyboard = 0;
-  }
+  input_unregister_device(entry->device.device);
+  input_free_device(entry->device.device);
 
-  releaseInputKeyboard();
+  list_del(&entry->list);
+  kfree(entry);
 }

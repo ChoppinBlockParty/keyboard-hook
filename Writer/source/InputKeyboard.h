@@ -1,6 +1,8 @@
 #ifndef MyModule_InputKeyboard_hpp
 #define MyModule_InputKeyboard_hpp
 
+#include "OutputKeyboard.h"
+
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/err.h>
@@ -14,27 +16,21 @@
 #include <asm/uaccess.h>
 
 struct InputKeyboard {
-  unsigned char* data;
-  unsigned long  bufferPosition;
-  unsigned long  bufferReadPosition;
-  unsigned long  buffer_size;
-  unsigned long  blockSize;
-  unsigned int   major;
-  unsigned int   minor;
-  struct         class*  class;
-  struct mutex   mutex;
-  struct cdev    cdev;
+  unsigned int           major;
+  unsigned int           minor;
+  struct                 class*  class;
+  struct mutex           mutex;
+  struct cdev            cdev;
+  struct OutputKeyboard* output_device;
 };
 
-struct InputKeyboard*
-getInputKeyboard(void);
-
 int
-createInputKeyboard(unsigned int  major,
-                    unsigned int  minor,
-                    struct class* class);
+createInputKeyboard(unsigned int           major,
+                    unsigned int           minor,
+                    struct class*          class,
+                    struct OutputKeyboard* output_device);
 
 void
-releaseInputKeyboard(void);
+releaseAllInputKeyboard(void);
 
 #endif

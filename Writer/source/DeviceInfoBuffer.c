@@ -17,6 +17,10 @@ _openDeviceInfoBuffer(struct inode* inode, struct file* filp) {
   unsigned int mj = imajor(inode);
   unsigned int mn = iminor(inode);
 
+  if (mutex_lock_killable(&_deviceInfoBuffer->mutex)) {
+    return -EINTR;
+  }
+
   if (mj != _deviceInfoBuffer->major ||
       mn != _deviceInfoBuffer->minor) {
     printk(KERN_WARNING "[target] "
@@ -39,10 +43,6 @@ _writeToDeviceInfoBuffer(struct file*       filp,
                          size_t             count,
                          loff_t*            f_pos) {
   ssize_t retval = 0;
-
-  if (mutex_lock_killable(&_deviceInfoBuffer->mutex)) {
-    return -EINTR;
-  }
 
   if (_deviceInfoBuffer->bufferPosition >= _deviceInfoBuffer->buffer_size) {
     /* Writing beyond the end of the buffer is not allowed. */
@@ -67,14 +67,13 @@ _writeToDeviceInfoBuffer(struct file*       filp,
   retval                             = count;
 
 out:
-  mutex_unlock(&_deviceInfoBuffer->mutex);
   return retval;
 }
 
 int
 _releaseDeviceInfoBuffer(struct inode* inode, struct file* filp) {
   int err = createOutputKeyboard(_deviceInfoBuffer->major,
-                                 _deviceInfoBuffer->minor,
+                                 _deviceInfoBuffer->minor + 1,
                                  _deviceInfoBuffer->class);
   _deviceInfoBuffer->bufferPosition = 0;
 
@@ -82,6 +81,8 @@ _releaseDeviceInfoBuffer(struct inode* inode, struct file* filp) {
     printk(KERN_WARNING "Failed to createOutputKeyboard");
     return err;
   }
+
+  mutex_unlock(&_deviceInfoBuffer->mutex);
 
   return 0;
 }
@@ -174,7 +175,7 @@ createDeviceInfoBuffer(unsigned int  major,
 void
 releaseDeviceInfoBuffer(void) {
   BUG_ON(_deviceInfoBuffer == NULL || _deviceInfoBuffer->class == NULL);
-  releaseOutputKeyboard();
+  releaseAllOutputKeyboard();
   device_destroy(_deviceInfoBuffer->class,
                  MKDEV(_deviceInfoBuffer->major, _deviceInfoBuffer->minor));
   cdev_del(&_deviceInfoBuffer->cdev);

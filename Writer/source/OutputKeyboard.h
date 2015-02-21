@@ -11,12 +11,22 @@
 #include <linux/slab.h>
 #include <linux/version.h>
 
+#define MAX_NUMBER_OF_DEVICES 10
+
+struct OutputKeyboard {
+  int               number;
+  struct input_dev* device;
+};
+
 int
 createOutputKeyboard(unsigned int  major,
                      unsigned int  minor,
                      struct class* class);
 
 void
-releaseOutputKeyboard(void);
+releaseAllOutputKeyboard(void);
+
+void
+releaseOutputKeyboard(struct OutputKeyboard* device);
 
 #endif

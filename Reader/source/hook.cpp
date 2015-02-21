@@ -206,7 +206,7 @@ writeCodeBits(struct libevdev* dev,
 }
 
 void
-gatherInfo(struct libevdev* dev) {
+gatherInfo(unsigned const& number, struct libevdev* dev) {
   std::string deviceName("");
   const char* deviceNameChars = libevdev_get_name(dev);
 
@@ -229,6 +229,7 @@ gatherInfo(struct libevdev* dev) {
 
   const int deviceIdVersion = libevdev_get_id_version(dev);
 
+  writeToBuffer(&deviceInfo, (unsigned int)number);
   writeToBuffer(&deviceInfo, (unsigned int)deviceName.size() + 1);
   writeToBuffer(&deviceInfo, &deviceName);
   writeToBuffer(&deviceInfo, (unsigned int)devicePhys.size() + 1);
@@ -361,7 +362,7 @@ openOutputDevice() {
 }
 
 int
-sendDeviceInfo() {
+sendDeviceInfo(unsigned const& device_number) {
   int result =  write(outpuDeviceFileDescriptor1,
                       deviceInfo.data(),
                       sizeof (char) * deviceInfo.size());
@@ -380,10 +381,13 @@ sendDeviceInfo() {
     return result;
   }
 
-  outpuDeviceFileDescriptor2 = open(outputDeviceName2, O_WRONLY);
+  std::string output_device_name(outputDeviceName2);
+  output_device_name += std::to_string(device_number);
+
+  outpuDeviceFileDescriptor2 = open(output_device_name.c_str(), O_WRONLY);
 
   if (outpuDeviceFileDescriptor2 <= 0) {
-    logError("Failed to open %s", outputDeviceName2);
+    logError("Failed to open %s", output_device_name.c_str());
 
     return -1;
   }
@@ -625,15 +629,15 @@ sendSafeEvent(struct input_event* event, int const& result) {
 }
 
 void
-initializeAndRunForwarding() {
-  gatherInfo(InputDevice);
+initializeAndRunForwarding(unsigned const& device_number) {
+  gatherInfo(device_number, InputDevice);
   gatherEvents(InputDevice);
 
   if (!openOutputDevice()) {
     return;
   }
 
-  if (sendDeviceInfo() != 0) {
+  if (sendDeviceInfo(device_number) != 0) {
     return;
   }
 
@@ -687,7 +691,7 @@ initializeAndRunForwarding() {
 }
 
 void
-handleEvents(std::string const& devicePath) {
+handleEvents(unsigned const& device_number, std::string const& devicePath) {
   int fd;
   fd = open(devicePath.c_str(),
             O_RDONLY | O_NONBLOCK);
@@ -708,7 +712,7 @@ handleEvents(std::string const& devicePath) {
     return;
   }
 
-  initializeAndRunForwarding();
+  initializeAndRunForwarding(device_number);
 
   releaseDevices();
 }
@@ -730,7 +734,7 @@ setupHook(int const& device, bool doShowEvent) {
     if (doShowEvent) {
       viewEvents(devicePath);
     } else {
-      handleEvents(devicePath);
+      handleEvents(device, devicePath);
     }
   }
 
