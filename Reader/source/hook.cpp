@@ -45,9 +45,9 @@ SimpleKey semiColon(66);
 
 void
 logLog(char const* msg, char const* format, va_list args) {
-  fprintf(stderr, "[%s] ", msg);
-  vfprintf(stderr, format, args);
-  fprintf(stderr, "\n");
+  fprintf(stdout, "[%s] ", msg);
+  vfprintf(stdout, format, args);
+  fprintf(stdout, "\n");
 }
 
 void
@@ -650,7 +650,7 @@ initializeAndRunForwarding(unsigned const& device_number) {
     struct input_event event;
     rc = libevdev_next_event(InputDevice,
                              LIBEVDEV_READ_FLAG_NORMAL |
-                             LIBEVDEV_READ_FLAG_BLOCKING, &event);
+                             LIBEVDEV_READ_FLAG_BLOCKING , &event);
 
     if (event.type == EV_SYN) {
       if (grabInputDevice() != 0) {
@@ -675,11 +675,6 @@ initializeAndRunForwarding(unsigned const& device_number) {
         return;
       }
     }
-
-    if (rc == -EAGAIN) {
-      usleep(1000);
-      continue;
-    }
   } while (rc == LIBEVDEV_READ_STATUS_SYNC || rc ==
            LIBEVDEV_READ_STATUS_SUCCESS || rc == -EAGAIN);
 
@@ -693,8 +688,7 @@ initializeAndRunForwarding(unsigned const& device_number) {
 void
 handleEvents(unsigned const& device_number, std::string const& devicePath) {
   int fd;
-  fd = open(devicePath.c_str(),
-            O_RDONLY | O_NONBLOCK);
+  fd = open(devicePath.c_str(), O_RDONLY);
 
   int err;
   InputDevice = libevdev_new();
