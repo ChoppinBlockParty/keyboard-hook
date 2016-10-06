@@ -73,15 +73,15 @@ private:
   KeyCode _code;
 };
 
-class Modifier : public Key {
+class Modifier: public Key {
 public:
   typedef Key Base;
 
   Modifier(KeyCode const& code) : Base(code),
-                                  _isPressed(false) {}
+    _isPressed(false) {}
 
   Modifier(Modifier const& other) : Base(other),
-                                    _isPressed(other._isPressed) {}
+    _isPressed(other._isPressed) {}
 
   virtual
   ~Modifier() {}
@@ -154,6 +154,8 @@ static LinuxKeyboardHook::Reader::Modifier _leftAlt(56);
 static LinuxKeyboardHook::Reader::Modifier _rightAlt(100);
 static LinuxKeyboardHook::Reader::Modifier _leftCtrl(29);
 static LinuxKeyboardHook::Reader::Modifier _rightCtrl(97);
+static LinuxKeyboardHook::Reader::Modifier _sysRq(99); // PtrSc
+static LinuxKeyboardHook::Reader::Modifier _leftMeta(125);
 
 bool
 isShiftPressed() {
@@ -266,7 +268,6 @@ handleCtrl(struct input_event* event) {
   return false;
 }
 
-
 bool
 handleShift(struct input_event* event) {
   if (event->type != EV_KEY) {
@@ -321,7 +322,7 @@ handleSemicolon(struct input_event* event) {
   }
 
   if (_altSemicolon.isPressed()) {
-      sendKeyEvent(&event->time,
+    sendKeyEvent(&event->time,
                  event->value,
                  event->code);
 
@@ -330,13 +331,13 @@ handleSemicolon(struct input_event* event) {
     } else if (event->value == 0) {
       _altSemicolon.isPressed() = false;
 
-      //if (_leftAlt.isPressed()) {
+      // if (_leftAlt.isPressed()) {
       //  _semicolonLeftAlt.restoreState(&event->time);
-      //}
+      // }
 
-      //if (_rightAlt.isPressed()) {
+      // if (_rightAlt.isPressed()) {
       //  _semicolonRightAlt.restoreState(&event->time);
-      //}
+      // }
     }
 
     return true;
@@ -348,6 +349,7 @@ handleSemicolon(struct input_event* event) {
     } else if (event->value == 0) {
       _fakeBackspace.isPressed() = false;
     }
+
     event->code = _fakeBackspace.code();
 
     return true;
@@ -359,6 +361,7 @@ handleSemicolon(struct input_event* event) {
     } else if (event->value == 0) {
       _semicolon.isPressed() = false;
     }
+
     //
   } else if (isAltPressed()) {
     _semicolonLeftCtrl.isPressed() = _leftCtrl.isPressed();
@@ -376,7 +379,7 @@ handleSemicolon(struct input_event* event) {
     _semicolonLeftCtrl.release(&event->time);
     _semicolonLeftCtrl.restoreState(&event->time);
 
-      sendKeyEvent(&event->time,
+    sendKeyEvent(&event->time,
                  event->value,
                  event->code);
 
@@ -401,6 +404,24 @@ handleSemicolon(struct input_event* event) {
   return true;
 }
 
+static bool
+handleSysRqToLeftMeta(input_event* event) {
+  if (event->type == EV_KEY &&
+      event->code == _sysRq.code()) {
+    event->code = _leftMeta.code();
+
+    if (event->value == 1) {
+      _sysRq.isPressed() = true;
+    } else if (event->value == 0) {
+      _sysRq.isPressed() = false;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
 void
 handleEvent(struct input_event* event) {
   if (handleCapsLock(event)) {
@@ -414,6 +435,10 @@ handleEvent(struct input_event* event) {
   } else if (handleCtrl(event)) {
     //
   } else if (handleSemicolon(event)) {
+    //
+  } else if (handleSysRqToLeftMeta(event)) {
+    //
+  } else {
     //
   }
 }
