@@ -1,4 +1,4 @@
-#include "OutputKeyboard.h"
+#include "output_keyboard.h"
 
 #include <linux/init.h>
 #include <linux/input.h>
@@ -11,19 +11,19 @@
 #include <linux/time.h>
 #include <linux/timer.h>
 
-#include "DeviceInfoBuffer.h"
-#include "InputKeyboard.h"
+#include "device_info_buffer.h"
+#include "input_keyboard.h"
 
-struct ListEntry {
-  struct list_head      list;
-  struct OutputKeyboard device;
+struct list_entry {
+  struct list_head       list;
+  struct output_keyboard device;
 };
 
 static LIST_HEAD(_list);
 
-struct ListEntry*
-_findListEntry(unsigned int device_number) {
-  struct ListEntry* i;
+struct list_entry*
+find_list_entry(unsigned int device_number) {
+  struct list_entry* i;
 
   list_for_each_entry(i, &_list, list) {
     if (i->device.number == device_number) {
@@ -35,7 +35,7 @@ _findListEntry(unsigned int device_number) {
 }
 
 int
-getIntFromData(unsigned char* data, unsigned int* index) {
+get_int_from_data(unsigned char* data, unsigned int* index) {
   unsigned int count = sizeof(int) / sizeof(unsigned char);
 
   int* result = (int*)&data[*index];
@@ -45,7 +45,7 @@ getIntFromData(unsigned char* data, unsigned int* index) {
 }
 
 unsigned int
-getUnsignedIntFromData(unsigned char* data, unsigned int* index) {
+get_unsigned_int_from_data(unsigned char* data, unsigned int* index) {
   unsigned int count = sizeof(unsigned int) / sizeof(unsigned char);
 
   unsigned int* result = (unsigned int*)&data[*index];
@@ -54,36 +54,31 @@ getUnsignedIntFromData(unsigned char* data, unsigned int* index) {
   return *result;
 }
 
-void
-parseInfo(struct DeviceInfoBuffer* infoBuffer,
-          unsigned int*            index,
-          struct ListEntry*        entry) {
-  unsigned int size = getUnsignedIntFromData(
-    infoBuffer->data, index);
+void parse_info(struct device_info_buffer* infoBuffer,
+                unsigned int*            index,
+                struct list_entry*       entry) {
+  unsigned int size = get_unsigned_int_from_data(infoBuffer->data, index);
   entry->device.number = size;
-  size                        = getUnsignedIntFromData(
-    infoBuffer->data, index);
+  size = get_unsigned_int_from_data(infoBuffer->data, index);
   entry->device.device->name = &infoBuffer->data[*index];
-  *index                    += size;
+  *index += size;
 
-  size = getUnsignedIntFromData(
-    infoBuffer->data, index);
+  size = get_unsigned_int_from_data(infoBuffer->data, index);
   entry->device.device->phys = &infoBuffer->data[*index];
-  *index                    += size;
+  *index += size;
 
-  entry->device.device->id.bustype = getIntFromData(infoBuffer->data, index);
-  entry->device.device->id.vendor  = getIntFromData(infoBuffer->data, index);
-  entry->device.device->id.product = getIntFromData(infoBuffer->data, index);
-  entry->device.device->id.version = getIntFromData(infoBuffer->data, index);
+  entry->device.device->id.bustype = get_int_from_data(infoBuffer->data, index);
+  entry->device.device->id.vendor  = get_int_from_data(infoBuffer->data, index);
+  entry->device.device->id.product = get_int_from_data(infoBuffer->data, index);
+  entry->device.device->id.version = get_int_from_data(infoBuffer->data, index);
 }
 
-void
-parseCodeBits(struct DeviceInfoBuffer* infoBuffer,
-              unsigned int*            index,
-              struct ListEntry*        entry) {
-  unsigned int type = getUnsignedIntFromData(
+void parse_code_bits(struct device_info_buffer* infoBuffer,
+                     unsigned int*            index,
+                     struct list_entry*        entry) {
+  unsigned int type = get_unsigned_int_from_data(
     infoBuffer->data, index);
-  unsigned int size = getUnsignedIntFromData(
+  unsigned int size = get_unsigned_int_from_data(
     infoBuffer->data, index);
   unsigned int startIndex = 0;
 
@@ -92,7 +87,7 @@ parseCodeBits(struct DeviceInfoBuffer* infoBuffer,
   startIndex = *index;
 
   for (; (*index - startIndex) < size;) {
-    unsigned int code = getUnsignedIntFromData(infoBuffer->data, index);
+    unsigned int code = get_unsigned_int_from_data(infoBuffer->data, index);
 
     if (type == EV_KEY) {
       entry->device.device->keybit[BIT_WORD(code)] |= BIT_MASK(code);
@@ -103,29 +98,28 @@ parseCodeBits(struct DeviceInfoBuffer* infoBuffer,
 }
 
 void
-parseDeviceInfo(struct ListEntry* entry) {
-  struct DeviceInfoBuffer* infoBuffer = getDeviceInfoBuffer();
+parse_device_info(struct list_entry* entry) {
+  struct device_info_buffer* infoBuffer = get_device_info_buffer();
   unsigned int             index      = 0;
   unsigned int             size       = 0;
   unsigned int             startIndex = 0;
 
-  parseInfo(infoBuffer, &index, entry);
+  parse_info(infoBuffer, &index, entry);
 
-  size = getUnsignedIntFromData(infoBuffer->data, &index);
+  size = get_unsigned_int_from_data(infoBuffer->data, &index);
 
   startIndex = index;
 
   for (; (index - startIndex) < size;)
-    parseCodeBits(infoBuffer, &index, entry);
+    parse_code_bits(infoBuffer, &index, entry);
 }
 
-int
-createOutputKeyboard(unsigned int  major,
-                     unsigned int  minor,
-                     struct class* class) {
+int create_output_keyboard(unsigned int  major,
+                           unsigned int  minor,
+                           struct class* class) {
   int               error      = 0;
-  struct ListEntry* find_entry = NULL;
-  struct ListEntry* entry      = NULL;
+  struct list_entry* find_entry = NULL;
+  struct list_entry* entry      = NULL;
   int               size       = 0;
 
   list_for_each_entry(find_entry, &_list, list) {
@@ -133,18 +127,18 @@ createOutputKeyboard(unsigned int  major,
   }
 
   if (size == MAX_NUMBER_OF_DEVICES) {
-    printk(KERN_ERR "OutputKeyboard.c: Too many devices allocated already\n");
+    printk(KERN_ERR "output_keyboard.c: Too many devices allocated already\n");
     return -EFAULT;
   }
 
   find_entry = NULL;
 
-  entry = (struct ListEntry*)kzalloc(
-    sizeof(struct ListEntry),
+  entry = (struct list_entry*)kzalloc(
+    sizeof(struct list_entry),
     GFP_KERNEL);
 
   if (!entry) {
-    printk(KERN_ERR "OutputKeyboard.c: Not enough memory\n");
+    printk(KERN_ERR "output_keyboard.c: Not enough memory\n");
     error = -ENOMEM;
     return error;
   }
@@ -152,17 +146,17 @@ createOutputKeyboard(unsigned int  major,
   entry->device.device = input_allocate_device();
 
   if (!entry->device.device) {
-    printk(KERN_ERR "OutputKeyboard.c: Not enough memory\n");
+    printk(KERN_ERR "output_keyboard.c: Not enough memory\n");
     kfree(entry);
     error = -ENOMEM;
     return error;
   }
 
-  parseDeviceInfo(entry);
-  find_entry = _findListEntry(entry->device.number);
+  parse_device_info(entry);
+  find_entry = find_list_entry(entry->device.number);
 
   if (find_entry != 0) {
-    printk(KERN_ERR "OutputKeyboard.c: Device already exists\n");
+    printk(KERN_ERR "output_keyboard.c: Device already exists\n");
     input_free_device(entry->device.device);
     kfree(entry);
     return -EFAULT;
@@ -171,19 +165,19 @@ createOutputKeyboard(unsigned int  major,
   error = input_register_device(entry->device.device);
 
   if (error) {
-    printk(KERN_ERR "OutputKeyboard.c: Failed to register device\n");
+    printk(KERN_ERR "output_keyboard.c: Failed to register device\n");
     input_free_device(entry->device.device);
     kfree(entry);
     return error;
   }
 
-  error = createInputKeyboard(major,
+  error = create_input_keyboard(major,
                               minor + size,
                               class,
                               &entry->device);
 
   if (error != 0) {
-    printk(KERN_ERR "OutputKeyboard.c: Failed to createInputKeyboard\n");
+    printk(KERN_ERR "output_keyboard.c: Failed to create_input_keyboard\n");
     input_unregister_device(entry->device.device);
     input_free_device(entry->device.device);
     kfree(entry);
@@ -196,17 +190,17 @@ createOutputKeyboard(unsigned int  major,
 }
 
 void
-releaseAllOutputKeyboard(void) {
-  struct ListEntry* i;
+release_all_output_keyboards(void) {
+  struct list_entry* i;
   list_for_each_entry(i, &_list, list) {
-    releaseOutputKeyboard(&i->device);
+    release_output_keyboard(&i->device);
   }
-  releaseAllInputKeyboard();
+  release_all_input_keyboards();
 }
 
 void
-releaseOutputKeyboard(struct OutputKeyboard* device) {
-  struct ListEntry* entry = _findListEntry(device->number);
+release_output_keyboard(struct output_keyboard* device) {
+  struct list_entry* entry = find_list_entry(device->number);
 
   if (entry == 0) {
     return;

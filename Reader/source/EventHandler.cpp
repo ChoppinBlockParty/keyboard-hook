@@ -4,39 +4,35 @@
 
 typedef unsigned int KeyCode;
 
-struct input_event*
-createEvent() {
+struct input_event* createEvent() {
   _eventQueue.emplace_back();
   _isEventHandled = true;
 
   return &_eventQueue.back();
 }
 
-void
-sendKeyEvent(struct timeval* time,
-             int const&      isPressed,
-             KeyCode const&  code) {
-  auto mscEvent  = createEvent();
-  auto event     = createEvent();
+void sendKeyEvent(struct timeval* time, int const& isPressed, KeyCode const& code) {
+  auto mscEvent = createEvent();
+  auto event = createEvent();
   auto syncEvent = createEvent();
 
-  mscEvent->time  = *time;
-  mscEvent->type  = EV_MSC;
-  mscEvent->code  = MSC_SCAN;
+  mscEvent->time = *time;
+  mscEvent->type = EV_MSC;
+  mscEvent->code = MSC_SCAN;
   mscEvent->value = code;
 
-  event->time  = *time;
-  event->type  = EV_KEY;
-  event->code  = code;
+  event->time = *time;
+  event->type = EV_KEY;
+  event->code = code;
   event->value = isPressed;
 
-  syncEvent->time  = *time;
-  syncEvent->type  = EV_SYN;
-  syncEvent->code  = SYN_REPORT;
+  syncEvent->time = *time;
+  syncEvent->type = EV_SYN;
+  syncEvent->code = SYN_REPORT;
   syncEvent->value = 0;
 }
 
-namespace LinuxKeyboardHook {
+namespace KeyboardHook {
 namespace Reader {
 class Key {
 public:
@@ -44,84 +40,60 @@ public:
 
   Key(Key const& other) : _code(other._code) {}
 
-  virtual
-  ~Key() {}
+  virtual ~Key() {}
 
-  Key&
-  operator=(Key const& other) {
+  Key& operator=(Key const& other) {
     _code = other._code;
 
     return *this;
   }
 
-  KeyCode&
-  code() { return _code; }
+  KeyCode& code() { return _code; }
 
-  virtual
-  void
-  press(struct timeval* time) {
-    sendKeyEvent(time, 1, _code);
-  }
+  virtual void press(struct timeval* time) { sendKeyEvent(time, 1, _code); }
 
-  virtual
-  void
-  release(struct timeval* time) {
-    sendKeyEvent(time, 0, _code);
-  }
+  virtual void release(struct timeval* time) { sendKeyEvent(time, 0, _code); }
 
 private:
   KeyCode _code;
 };
 
-class Modifier: public Key {
+class Modifier : public Key {
 public:
   typedef Key Base;
 
-  Modifier(KeyCode const& code) : Base(code),
-    _isPressed(false) {}
+  Modifier(KeyCode const& code) : Base(code), _isPressed(false) {}
 
-  Modifier(Modifier const& other) : Base(other),
-    _isPressed(other._isPressed) {}
+  Modifier(Modifier const& other) : Base(other), _isPressed(other._isPressed) {}
 
-  virtual
-  ~Modifier() {}
+  virtual ~Modifier() {}
 
-  Modifier&
-  operator=(Modifier const& other) {
+  Modifier& operator=(Modifier const& other) {
     this->Base::operator=(other);
     _isPressed = other._isPressed;
 
     return *this;
   }
 
-  bool&
-  isPressed() { return _isPressed; }
+  bool& isPressed() { return _isPressed; }
 
-  void
-  saveState() {
-    _previousState = _isPressed;
-  }
+  void saveState() { _previousState = _isPressed; }
 
-  virtual
-  void
-  press(struct timeval* time) {
+  virtual void press(struct timeval* time) {
     if (!_isPressed) {
       this->Base::press(time);
       _isPressed = true;
     }
   }
 
-  virtual
-  void
-  release(struct timeval* time) {
+  virtual void release(struct timeval* time) {
     if (_isPressed) {
       this->Base::release(time);
       _isPressed = false;
     }
   }
 
-  void
-  restoreState(struct timeval* time) {
+  void restoreState(struct timeval* time) {
     if (_previousState != _isPressed) {
       if (_previousState) {
         press(time);
@@ -135,45 +107,37 @@ private:
   bool _isPressed;
   bool _previousState;
 };
-}
-}
+} // namespace Reader
+} // namespace KeyboardHook
 
-static LinuxKeyboardHook::Reader::Modifier _altSemicolon(39);
-static LinuxKeyboardHook::Reader::Modifier _semicolonLeftAlt(56);
-static LinuxKeyboardHook::Reader::Modifier _semicolonRightAlt(100);
-static LinuxKeyboardHook::Reader::Modifier _semicolonLeftCtrl(29);
-static LinuxKeyboardHook::Reader::Modifier _semicolon(39);
-static LinuxKeyboardHook::Reader::Modifier _fakeBackspace(14);
+static KeyboardHook::Reader::Modifier _altSemicolon(39);
+static KeyboardHook::Reader::Modifier _semicolonLeftAlt(56);
+static KeyboardHook::Reader::Modifier _semicolonRightAlt(100);
+static KeyboardHook::Reader::Modifier _semicolonLeftCtrl(29);
+static KeyboardHook::Reader::Modifier _semicolon(39);
+static KeyboardHook::Reader::Modifier _fakeBackspace(14);
 
-static LinuxKeyboardHook::Reader::Modifier _escape(1);
-static LinuxKeyboardHook::Reader::Modifier _capslock(58);
-static LinuxKeyboardHook::Reader::Modifier _germanShift(86);
-static LinuxKeyboardHook::Reader::Modifier _leftShift(42);
-static LinuxKeyboardHook::Reader::Modifier _rightShift(54);
-static LinuxKeyboardHook::Reader::Modifier _leftAlt(56);
-static LinuxKeyboardHook::Reader::Modifier _rightAlt(100);
-static LinuxKeyboardHook::Reader::Modifier _leftCtrl(29);
-static LinuxKeyboardHook::Reader::Modifier _rightCtrl(97);
-static LinuxKeyboardHook::Reader::Modifier _sysRq(99); // PtrSc
-static LinuxKeyboardHook::Reader::Modifier _leftMeta(125);
+static KeyboardHook::Reader::Modifier _escape(1);
+static KeyboardHook::Reader::Modifier _capslock(58);
+static KeyboardHook::Reader::Modifier _germanShift(86);
+static KeyboardHook::Reader::Modifier _leftShift(42);
+static KeyboardHook::Reader::Modifier _rightShift(54);
+static KeyboardHook::Reader::Modifier _leftAlt(56);
+static KeyboardHook::Reader::Modifier _rightAlt(100);
+static KeyboardHook::Reader::Modifier _leftCtrl(29);
+static KeyboardHook::Reader::Modifier _rightCtrl(97);
+static KeyboardHook::Reader::Modifier _sysRq(99); // PtrSc
+static KeyboardHook::Reader::Modifier _compose(127);
+static KeyboardHook::Reader::Modifier _leftMeta(125);
 
-bool
-isShiftPressed() {
-  return _leftShift.isPressed() ||
-         _rightShift.isPressed() ||
-         _germanShift.isPressed();
+bool isShiftPressed() {
+  return _leftShift.isPressed() || _rightShift.isPressed() || _germanShift.isPressed();
 }
 
-bool
-isAltPressed() {
-  return _leftAlt.isPressed() ||
-         _rightAlt.isPressed();
-}
+bool isAltPressed() { return _leftAlt.isPressed() || _rightAlt.isPressed(); }
 
-bool
-handleCapsLock(struct input_event* event) {
-  if (event->type == EV_KEY &&
-      event->code == _capslock.code()) {
+bool handleCapsLock(struct input_event* event) {
+  if (event->type == EV_KEY && event->code == _capslock.code()) {
     event->code = _escape.code();
 
     if (event->value == 1) {
@@ -188,10 +152,8 @@ handleCapsLock(struct input_event* event) {
   return false;
 }
 
-bool
-handleGermanShift(struct input_event* event) {
-  if (event->type == EV_KEY &&
-      event->code == _germanShift.code()) {
+bool handleGermanShift(struct input_event* event) {
+  if (event->type == EV_KEY && event->code == _germanShift.code()) {
     event->code = _leftShift.code();
 
     if (event->value == 1) {
@@ -206,8 +168,7 @@ handleGermanShift(struct input_event* event) {
   return false;
 }
 
-bool
-handleAlt(struct input_event* event) {
+bool handleAlt(struct input_event* event) {
   if (event->type != EV_KEY) {
     return false;
   }
@@ -241,8 +202,7 @@ handleAlt(struct input_event* event) {
   return false;
 }
 
-bool
-handleCtrl(struct input_event* event) {
+bool handleCtrl(struct input_event* event) {
   if (event->type != EV_KEY) {
     return false;
   }
@@ -268,8 +228,7 @@ handleCtrl(struct input_event* event) {
   return false;
 }
 
-bool
-handleShift(struct input_event* event) {
+bool handleShift(struct input_event* event) {
   if (event->type != EV_KEY) {
     return false;
   }
@@ -295,10 +254,8 @@ handleShift(struct input_event* event) {
   return false;
 }
 
-bool
-handleSemicolon(struct input_event* event) {
-  if (event->type != EV_KEY ||
-      event->code != _semicolon.code()) {
+bool handleSemicolon(struct input_event* event) {
+  if (event->type != EV_KEY || event->code != _semicolon.code()) {
     return false;
   }
 
@@ -306,9 +263,7 @@ handleSemicolon(struct input_event* event) {
     if (!isShiftPressed()) {
       _leftShift.press(&event->time);
 
-      sendKeyEvent(&event->time,
-                   event->value,
-                   event->code);
+      sendKeyEvent(&event->time, event->value, event->code);
       _leftShift.release(&event->time);
     }
 
@@ -322,9 +277,7 @@ handleSemicolon(struct input_event* event) {
   }
 
   if (_altSemicolon.isPressed()) {
-    sendKeyEvent(&event->time,
-                 event->value,
-                 event->code);
+    sendKeyEvent(&event->time, event->value, event->code);
 
     if (event->value == 1) {
       _altSemicolon.isPressed() = true;
@@ -369,7 +322,7 @@ handleSemicolon(struct input_event* event) {
     _semicolonLeftCtrl.isPressed() = false;
     _semicolonLeftCtrl.press(&event->time);
 
-    _semicolonLeftAlt.isPressed()  = _leftAlt.isPressed();
+    _semicolonLeftAlt.isPressed() = _leftAlt.isPressed();
     _semicolonRightAlt.isPressed() = _rightAlt.isPressed();
     _semicolonLeftAlt.saveState();
     _semicolonLeftAlt.release(&event->time);
@@ -379,9 +332,7 @@ handleSemicolon(struct input_event* event) {
     _semicolonLeftCtrl.release(&event->time);
     _semicolonLeftCtrl.restoreState(&event->time);
 
-    sendKeyEvent(&event->time,
-                 event->value,
-                 event->code);
+    sendKeyEvent(&event->time, event->value, event->code);
 
     // _leftAlt.restoreState(&event->time);
     // _rightAlt.restoreState(&event->time);
@@ -404,10 +355,8 @@ handleSemicolon(struct input_event* event) {
   return true;
 }
 
-static bool
-handleSysRqToLeftMeta(input_event* event) {
-  if (event->type == EV_KEY &&
-      event->code == _sysRq.code()) {
+static bool handleSysRqToLeftMeta(input_event* event) {
+  if (event->type == EV_KEY && event->code == _sysRq.code()) {
     event->code = _leftMeta.code();
 
     if (event->value == 1) {
@@ -422,8 +371,41 @@ handleSysRqToLeftMeta(input_event* event) {
   return false;
 }
 
-void
-handleEvent(struct input_event* event) {
+static bool handleComposeToLeftMeta(input_event* event) {
+  if (event->type == EV_KEY && event->code == _compose.code()) {
+    event->code = _leftMeta.code();
+
+    if (event->value == 1) {
+      _compose.isPressed() = true;
+    } else if (event->value == 0) {
+      _compose.isPressed() = false;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+static bool handleFnToLeftMeta(input_event* event) {
+  (void)event;
+  // if (event->type == EV_KEY &&
+  //     event->code == _sysRq.code()) {
+  //   event->code = _leftMeta.code();
+
+  //   if (event->value == 1) {
+  //     _sysRq.isPressed() = true;
+  //   } else if (event->value == 0) {
+  //     _sysRq.isPressed() = false;
+  //   }
+
+  //   return true;
+  // }
+
+  return false;
+}
+
+void handleEvent(struct input_event* event, bool useFnAsWindowKey) {
   if (handleCapsLock(event)) {
     //
   } else if (handleGermanShift(event)) {
@@ -436,7 +418,11 @@ handleEvent(struct input_event* event) {
     //
   } else if (handleSemicolon(event)) {
     //
+  } else if (handleComposeToLeftMeta(event)) {
+    //
   } else if (handleSysRqToLeftMeta(event)) {
+    //
+  } else if (useFnAsWindowKey && handleFnToLeftMeta(event)) {
     //
   } else {
     //

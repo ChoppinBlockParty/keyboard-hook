@@ -1,5 +1,4 @@
-#ifndef LinuxKeyboardHook_Reader_EventHandle_hpp
-#define LinuxKeyboardHook_Reader_EventHandle_hpp
+#pragma once
 
 #include <linux/input.h>
 #include <vector>
@@ -9,7 +8,4 @@ typedef std::vector<struct input_event> EventQueue;
 extern EventQueue _eventQueue;
 extern bool _isEventHandled;
 
-void
-handleEvent(struct input_event* event);
-
-#endif
+void handleEvent(struct input_event* event, bool useFnAsWindowKey);

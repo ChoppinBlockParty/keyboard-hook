@@ -1,5 +1,5 @@
-#ifndef MyModule_DeviceInfoBuffer_hpp
-#define MyModule_DeviceInfoBuffer_hpp
+#ifndef _KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_
+#define _KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_
 
 #include <linux/cdev.h>
 #include <linux/device.h>
@@ -13,7 +13,7 @@
 
 #include <asm/uaccess.h>
 
-struct DeviceInfoBuffer {
+struct device_info_buffer {
   unsigned char* data;
   unsigned long  bufferPosition;
   unsigned long  buffer_size;
@@ -24,15 +24,12 @@ struct DeviceInfoBuffer {
   struct cdev    cdev;
 };
 
-struct DeviceInfoBuffer*
-getDeviceInfoBuffer(void);
+struct device_info_buffer* get_device_info_buffer(void);
 
-int
-createDeviceInfoBuffer(unsigned int  major,
-                       unsigned int  minor,
-                       struct class* class);
+int create_device_info_buffer(unsigned int  major,
+                              unsigned int  minor,
+                              struct class* class);
 
-void
-releaseDeviceInfoBuffer(void);
+void destroy_device_info_buffer(void);
 
 #endif

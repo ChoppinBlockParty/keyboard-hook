@@ -1,7 +1,3 @@
-#ifndef LinuxKeyboardHook_Reader_hook_hpp
-#define LinuxKeyboardHook_Reader_hook_hpp
+#pragma once
 
-void
-setupHook(int const&, bool);
-
-#endif
+void setupHook(int, bool, bool);

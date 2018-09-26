@@ -14,21 +14,20 @@
 
 #include <asm/uaccess.h>
 
-#include "DeviceInfoBuffer.h"
-#include "OutputKeyboard.h"
+#include "device_info_buffer.h"
+#include "output_keyboard.h"
 
-MODULE_AUTHOR("Viacheslav Mikerov");
-MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Yuki");
+MODULE_LICENSE("Dual BSD/GPL");
 
-#define LINUX_KEYBOARD_HOOK_WRITER_MODULE_NAME "LinuxKeyboardHookWriter"
+#define KEYBOARD_HOOK_WRITER_MODULE_NAME "keyboard_hook_writer"
 
 static int const _deviceCount = MAX_NUMBER_OF_DEVICES + 1;
 
-static unsigned int  _major = 0;
+static unsigned int _major = 0;
 static struct class* _class = NULL;
 
-static void
-cfake_cleanup_module(void) {
+static void cfake_cleanup_module(void) {
   if (_class) {
     class_destroy(_class);
   }
@@ -37,23 +36,19 @@ cfake_cleanup_module(void) {
   return;
 }
 
-static int __init
-cfake_init_module(void) {
-  int   err = 0;
+static int __init cfake_init_module(void) {
+  int err = 0;
   dev_t dev = 0;
 
   if (_deviceCount <= 0) {
-    printk(KERN_WARNING "[target] Invalid value of _deviceCount: %d\n",
-           _deviceCount);
+    printk(KERN_WARNING "[target] Invalid value of _deviceCount: %d\n", _deviceCount);
     err = -EINVAL;
     return err;
   }
 
   /* Get a range of minor numbers (starting with 0) to work with */
-  err = alloc_chrdev_region(&dev,
-                            0,
-                            _deviceCount,
-                            LINUX_KEYBOARD_HOOK_WRITER_MODULE_NAME);
+  err
+    = alloc_chrdev_region(&dev, 0, _deviceCount, KEYBOARD_HOOK_WRITER_MODULE_NAME);
 
   if (err < 0) {
     printk(KERN_WARNING "[target] alloc_chrdev_region() failed\n");
@@ -63,7 +58,7 @@ cfake_init_module(void) {
   _major = MAJOR(dev);
 
   /* Create device class (before allocation of the array of devices) */
-  _class = class_create(THIS_MODULE, LINUX_KEYBOARD_HOOK_WRITER_MODULE_NAME);
+  _class = class_create(THIS_MODULE, KEYBOARD_HOOK_WRITER_MODULE_NAME);
 
   if (IS_ERR(_class)) {
     err = PTR_ERR(_class);
@@ -71,23 +66,21 @@ cfake_init_module(void) {
     return err;
   }
 
-  err = createDeviceInfoBuffer(_major, 0, _class);
+  err = create_device_info_buffer(_major, 0, _class);
 
   if (err != 0) {
     cfake_cleanup_module();
     return err;
   }
 
-  return 0;       /* success */
+  return 0; /* success */
 }
 
-static void __exit
-cfake_exit_module(void) {
-  releaseDeviceInfoBuffer();
+static void __exit cfake_exit_module(void) {
+  destroy_device_info_buffer();
   cfake_cleanup_module();
   return;
 }
 
 module_init(cfake_init_module);
 module_exit(cfake_exit_module);
-/* ================================================================ */

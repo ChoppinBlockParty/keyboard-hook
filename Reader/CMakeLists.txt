@@ -9,7 +9,7 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   message(SEND_ERROR "In-source builds are not allowed.")
 endif ()
 # ------------------------------------------------------------------------------
-project("LinuxKeyboardHookReader" C CXX)
+project("Keyboard Hook Reader" C CXX)
 # ------------------------------------------------------------------------------
 set(CMAKE_ERROR_DEPRECATED ON)
 # ------------------------------------------------------------------------------
@@ -25,15 +25,6 @@ set(INSTALL_LIBRARY_DIR lib)
 # ==============================================================================
 # }}} General
 
-# Compilers {{{
-# ==============================================================================
-if (CMAKE_COMPILER_IS_GNUCXX)
-  set(COMPILER_IS_G++ TRUE)
-  set(LINKER_IS_LD    TRUE)
-endif ()
-# ==============================================================================
-# }}} Compilers
-
 find_package(
   Boost 1.55
   COMPONENTS
@@ -41,40 +32,36 @@ find_package(
   system
   REQUIRED)
 
-# Flags {{{
-# ==============================================================================
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-if (COMPILER_IS_G++)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmessage-length=0")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pipe")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmessage-length=0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
-endif ()
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fomit-frame-pointer")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -funroll-loops")
 
 file(GLOB_RECURSE CPP_FILES
   "${PROJECT_DIR}/source/*.cpp")
 
-add_executable(LinuxKeyboardHookReader ${CPP_FILES})
+add_executable(KeyboardHookReader ${CPP_FILES})
 
 target_include_directories(
-  LinuxKeyboardHookReader
+  KeyboardHookReader
   SYSTEM PRIVATE
   ${Boost_INCLUDE_DIRS})
 
 
 target_link_libraries(
-  LinuxKeyboardHookReader
+  KeyboardHookReader
   ${Boost_LIBRARIES}
   evdev
   pthread)
 
-install(TARGETS LinuxKeyboardHookReader
+install(TARGETS KeyboardHookReader
         ARCHIVE DESTINATION ${INSTALL_LIBRARY_DIR}
         LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}
         RUNTIME DESTINATION ${INSTALL_BINARY_DIR})
