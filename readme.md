@@ -1,6 +1,11 @@
 Keyboard hook for Linux
 =================================
 
+- Replaces `;` with `<backspace>`
+- Replaces `Alt-;` with `;`
+
+and a few other replacements.
+
 To make Writer (linux kernel module) autoloadable
 
 ``` shell
