@@ -18,10 +18,10 @@
 
 #define KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_MASTER "/dev/input/event"
 
-#define KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_PATH                        \
+#define KEYBOARD_HOOK_WRITER_DEVICE_INFO_BUFFER_DEVICE_PATH                              \
   "/dev/keyboard_hook_writer_device_info_buffer"
 
-#define KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_PATH                            \
+#define KEYBOARD_HOOK_WRITER_INPUT_KEYBOARD_DEVICE_PATH                                  \
   "/dev/keyboard_hook_writer_input_keyboard"
 
 EventQueue _eventQueue;
