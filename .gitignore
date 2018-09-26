@@ -5,7 +5,7 @@
 !.gitignore
 !CMakeLists.txt
 !Makefile
-!README.md
+!readme.md
 !*.h
 !*.c
 !*.hpp
@@ -15,6 +15,5 @@
 
 !tools
 !autostart
-!tools/autostart/Memo.md
-!tools/autostart/LinuxKeyboardHookReader.desktop
-!tools/autostart/LinuxKeyboardHookWriter.conf
+!tools/autostart/keyboard_hook_reader.desktop
+!tools/autostart/keyboard_hook_writer.conf
