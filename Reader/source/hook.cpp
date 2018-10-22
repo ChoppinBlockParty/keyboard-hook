@@ -568,14 +568,6 @@ int grabInputDevice() {
   return 0;
 }
 
-int sendSafeEvent(struct input_event* event, int result, bool useFnAsWindowKey) {
-  if (result == -EAGAIN) {
-    // return 0;
-  }
-
-  return sendEvent(event, useFnAsWindowKey);
-}
-
 void initializeAndRunForwarding(unsigned device_number, bool useFnAsWindowKey) {
   gatherInfo(device_number, InputDevice);
   gatherEvents(InputDevice);
@@ -606,18 +598,22 @@ void initializeAndRunForwarding(unsigned device_number, bool useFnAsWindowKey) {
 
     if (rc == LIBEVDEV_READ_STATUS_SYNC) {
       while (rc == LIBEVDEV_READ_STATUS_SYNC) {
-        if (sendSafeEvent(&event, rc, useFnAsWindowKey) != 0) {
+        if (sendEvent(&event, useFnAsWindowKey) != 0) {
           return;
         }
 
         rc = libevdev_next_event(InputDevice, LIBEVDEV_READ_FLAG_SYNC, &event);
       }
 
-      if (sendSafeEvent(&event, rc, useFnAsWindowKey) != 0) {
+      if (rc == -EAGAIN) {
+        continue;
+      }
+
+      if (sendEvent(&event, useFnAsWindowKey) != 0) {
         return;
       }
     } else if (rc == LIBEVDEV_READ_STATUS_SUCCESS) {
-      if (sendSafeEvent(&event, rc, useFnAsWindowKey) != 0) {
+      if (sendEvent(&event, useFnAsWindowKey) != 0) {
         return;
       }
     }
