@@ -13,6 +13,7 @@
 *.*.*
 *.*.*.*
 
+!install.sh
 !tools
 !autostart
 !tools/autostart/keyboard_hook_reader.desktop

@@ -9,6 +9,7 @@
 #include <linux/kernel.h>
 #include <linux/mutex.h>
 #include <linux/slab.h>
+#include <linux/uaccess.h>
 #include <linux/version.h>
 
 #include <asm/uaccess.h>

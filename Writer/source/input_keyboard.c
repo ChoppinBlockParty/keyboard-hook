@@ -61,7 +61,7 @@ ssize_t write_to_input_keyboard(struct file*       filp,
     return -EFAULT;
   }
 
-  if (copy_from_user(&data, buf, count) != 0) {
+  if (raw_copy_from_user(&data, buf, count) != 0) {
     printk(KERN_ERR "Failed to get data from user\n");
     retval = -EFAULT;
     goto out;
