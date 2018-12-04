@@ -7,14 +7,14 @@ SCRIPT_DIR="$(realpath -s "$(dirname "$0")")"
 export CFLAGS='-O3 -fomit-frame-pointer -fstrict-aliasing'
 export CXXFLAGS='-O3 -fomit-frame-pointer -fstrict-aliasing'
 
-if [[ -x $(command -v clang 2>/dev/null) ]]; then
+if [ -x "$(command -v clang 2>/dev/null)" ]; then
   export CC=clang
   export CXX=clang++
   export AR=llvm-ar
   export RANLIB=llvm-ranlib
-  # export CFLAGS="$CFLAGS -flto"
-  # export CXXFLAGS="$CXXFLAGS -flto"
-  # export LDFLAGS="$LDFLAGS -flto"
+  export CFLAGS="$CFLAGS -flto"
+  export CXXFLAGS="$CXXFLAGS -flto"
+  export LDFLAGS="$LDFLAGS -flto"
 fi
 
 sudo apt-get install -y --no-install-recommends libelf-dev libevdev-dev
