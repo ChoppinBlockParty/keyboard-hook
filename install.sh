@@ -2,6 +2,8 @@
 
 set -e
 
+sudo apt-get install -y --no-install-recommends libboost-all-dev
+
 SCRIPT_DIR="$(realpath -s "$(dirname "$0")")"
 
 export CFLAGS='-O3 -fomit-frame-pointer -fstrict-aliasing'
@@ -25,7 +27,7 @@ mkdir -p .build
 cd .build
 cmake ../
 make -j 4
-cp -f KeyboardHookReader $HOME/bin
+sudo cp -f KeyboardHookReader /usr/bin
 
 cd "$SCRIPT_DIR/Writer"
 make clean || true
