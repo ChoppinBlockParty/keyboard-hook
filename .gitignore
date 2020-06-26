@@ -14,7 +14,5 @@
 *.*.*.*
 
 !install.sh
-!tools
-!autostart
-!tools/autostart/keyboard_hook_reader.desktop
-!tools/autostart/keyboard_hook_writer.conf
+!keyboard-hook.service
+!keyboard-hook-service.sh
