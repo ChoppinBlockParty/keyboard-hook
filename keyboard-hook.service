@@ -1,5 +1,6 @@
 [Unit]
 Description=Keyboard hook service
+After=multi-user.target
 
 [Service]
 Type=oneshot
@@ -8,4 +9,4 @@ ExecStart=/etc/keyboard-hook-service.sh
 StandardOutput=journal
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

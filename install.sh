@@ -20,3 +20,9 @@ make
 sudo cp -f keyboard_hook_writer.ko /lib/modules/`uname -r`/kernel/drivers/input
 echo "keyboard_hook_writer" | sudo tee /etc/modules-load.d/keyboard_hook_writer.conf
 sudo depmod
+
+cd "$SCRIPT_DIR"
+
+sudo cp keyboard-hook-service.sh /etc
+sudo cp keyboard-hook.service /etc/systemd/system
+sudo systemctl enable --now keyboard-hook
