@@ -53,7 +53,7 @@ ssize_t write_to_input_keyboard(struct file*       filp,
                                 loff_t*            f_pos) {
   unsigned char data[sizeof(struct input_event)];
   struct input_event* event  = NULL;
-  struct list_entry*   entry  = filp->private_data;
+  struct list_entry*  entry  = filp->private_data;
   ssize_t             retval = 0;
 
   if (count != sizeof(struct input_event)) {
@@ -99,10 +99,10 @@ struct file_operations input_keyboard_Fops = {
 };
 
 int
-create_input_keyboard(unsigned int           major,
-                    unsigned int           minor,
-                    struct class*          class,
-                    struct output_keyboard* output_device) {
+create_input_keyboard(unsigned int            major,
+                      unsigned int            minor,
+                      struct class*           class,
+                      struct output_keyboard* output_device) {
   char device_name[256];
   int            error = 0;
   dev_t          devno;
