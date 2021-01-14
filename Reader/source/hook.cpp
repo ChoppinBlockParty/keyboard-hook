@@ -88,9 +88,9 @@ void writeToBuffer(Buffer* buffer, int value) {
     buffer->push_back(pointer[i]);
 }
 
-void writeToBuffer(Buffer* buffer, std::string const* value) {
-  for (unsigned int i = 0; i < value->size(); ++i)
-    buffer->push_back(value->at(i));
+void writeToBuffer(Buffer* buffer, std::string const& value) {
+  for (unsigned i = 0; i < value.size(); ++i)
+    buffer->push_back(value[i]);
 
   buffer->push_back('\0');
 }
@@ -187,14 +187,16 @@ void writeCodeBits(struct libevdev* dev,
 }
 
 void gatherInfo(unsigned const& number, struct libevdev* dev) {
-  std::string deviceName("");
+  std::string deviceName;
   const char* deviceNameChars = libevdev_get_name(dev);
 
   if (deviceNameChars != 0) {
     deviceName = deviceNameChars;
   }
 
-  std::string devicePhys("");
+  deviceName += " KH" + std::to_string(number);
+
+  std::string devicePhys;
   const char* devicePhysChars = libevdev_get_phys(dev);
 
   if (devicePhysChars != 0) {
@@ -209,11 +211,11 @@ void gatherInfo(unsigned const& number, struct libevdev* dev) {
 
   const int deviceIdVersion = libevdev_get_id_version(dev);
 
-  writeToBuffer(&deviceInfo, (unsigned int)number);
-  writeToBuffer(&deviceInfo, (unsigned int)deviceName.size() + 1);
-  writeToBuffer(&deviceInfo, &deviceName);
-  writeToBuffer(&deviceInfo, (unsigned int)devicePhys.size() + 1);
-  writeToBuffer(&deviceInfo, &devicePhys);
+  writeToBuffer(&deviceInfo, (unsigned)number);
+  writeToBuffer(&deviceInfo, (unsigned)deviceName.size() + 1);
+  writeToBuffer(&deviceInfo, deviceName);
+  writeToBuffer(&deviceInfo, (unsigned)devicePhys.size() + 1);
+  writeToBuffer(&deviceInfo, devicePhys);
   writeToBuffer(&deviceInfo, deviceIdBusType);
   writeToBuffer(&deviceInfo, deviceIdVendor);
   writeToBuffer(&deviceInfo, deviceIdProduct);

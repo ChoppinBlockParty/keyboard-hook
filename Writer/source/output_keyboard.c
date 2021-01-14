@@ -145,12 +145,15 @@ int create_output_keyboard(unsigned int  major,
 
   entry->device.device = input_allocate_device();
 
+
   if (!entry->device.device) {
     printk(KERN_ERR "output_keyboard.c: Not enough memory\n");
     kfree(entry);
     error = -ENOMEM;
     return error;
   }
+
+  printk(KERN_INFO "output_keyboard.c: Allocated new device\n");
 
   parse_device_info(entry);
   find_entry = find_list_entry(entry->device.number);
@@ -175,6 +178,8 @@ int create_output_keyboard(unsigned int  major,
                               minor + size,
                               class,
                               &entry->device);
+
+  printk(KERN_INFO "output_keyboard.c: Created device %u %s\n", entry->device.number, entry->device.device->name);
 
   if (error != 0) {
     printk(KERN_ERR "output_keyboard.c: Failed to create_input_keyboard\n");
