@@ -25,3 +25,10 @@ Do not forget `sudo`
     sudo KeyboardHookReader -h
     sudo cp KeyboardHookReader /usr/bin
 ```
+
+To restart in runtime
+
+```bash
+sudo pkill KeyboardHook; sudo rmmod keyboard_hook_writer; sudo modprobe keyboard_hook_writer; sudo /etc/keyboard-hook-service.sh
+```
+
