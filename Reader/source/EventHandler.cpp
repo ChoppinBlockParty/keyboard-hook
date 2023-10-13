@@ -416,7 +416,7 @@ void handleEvent(struct input_event* event, bool useFnAsWindowKey) {
     //
   } else if (handleCtrl(event)) {
     //
-  } else if (handleSemicolon(event)) {
+// } else if (handleSemicolon(event)) {
     //
   } else if (handleComposeToLeftMeta(event)) {
     //

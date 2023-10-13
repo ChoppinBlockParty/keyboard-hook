@@ -26,4 +26,4 @@ cd "$SCRIPT_DIR"
 sudo cp keyboard-hook-service.sh /etc
 sudo cp keyboard-hook.service /etc/systemd/system
 sudo systemctl enable --now keyboard-hook
-sudo pkill KeyboardHook; sudo rmmod keyboard_hook_writer; sudo modprobe keyboard_hook_writer; sleep 3; sudo /etc/keyboard-hook-service.sh
+sudo pkill KeyboardHook; sudo rmmod keyboard_hook_writer; sleep 3; sudo modprobe keyboard_hook_writer; sleep 3; sudo /etc/keyboard-hook-service.sh; sleep 1; xset r rate 200 40
