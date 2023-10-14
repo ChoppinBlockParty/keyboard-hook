@@ -1,7 +1,5 @@
 #! /usr/bin/env bash
 
-set -e
-
 sudo apt-get install -y --no-install-recommends libboost-all-dev libelf-dev libevdev-dev
 
 SCRIPT_DIR="$(realpath -s "$(dirname "$0")")"
