@@ -145,7 +145,6 @@ int create_output_keyboard(unsigned int  major,
 
   entry->device.device = input_allocate_device();
 
-
   if (!entry->device.device) {
     printk(KERN_ERR "output_keyboard.c: Not enough memory\n");
     kfree(entry);
@@ -165,7 +164,11 @@ int create_output_keyboard(unsigned int  major,
     return -EFAULT;
   }
 
-  error = input_register_device(entry->device.device);
+  for (int i = 0; i < 3; ++i) {
+     error = input_register_device(entry->device.device);
+     if (!error)
+         break;
+  }
 
   if (error) {
     printk(KERN_ERR "output_keyboard.c: Failed to register device\n");
